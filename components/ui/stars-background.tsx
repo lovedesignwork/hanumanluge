@@ -31,7 +31,7 @@ export function StarsBackground({
 }: StarsBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starsRef = useRef<Star[]>([]);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
