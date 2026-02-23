@@ -4,9 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
-  CheckCircle, Calendar, Clock, Users, MapPin, Mail, Phone, Car, 
+  CheckCircle, Calendar, Clock, MapPin, Mail, Phone, Car, 
   ChevronRight, Ticket, Zap, Shield, ArrowRight
 } from 'lucide-react';
 
@@ -152,59 +151,29 @@ function SuccessContent() {
 
   return (
     <main className="min-h-screen bg-navy relative overflow-hidden">
-      {/* Hero Banner */}
-      <section className="relative h-[35vh] min-h-[280px] overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/1000/Hanuman Luge 12.jpg"
-            alt="Success"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-navy/60 via-navy/40 to-navy" />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy/70 via-transparent to-navy/70" />
-        </div>
-
-        {/* Racing stripes */}
-        <div className="absolute inset-0 opacity-[0.06]" style={{
-          backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 50px, #fe6004 50px, #fe6004 52px)`
-        }} />
-
-        {/* Speed lines */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(4)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute h-[1px] bg-gradient-to-r from-transparent via-[#fe6004]/40 to-transparent"
-              style={{ top: `${20 + i * 20}%`, left: '-100%', width: '200%' }}
-              animate={{ x: ['0%', '50%'] }}
-              transition={{ duration: 4 + i, repeat: Infinity, ease: 'linear', delay: i * 0.3 }}
-            />
-          ))}
-        </div>
-
-        {/* Success Icon */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-center">
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', duration: 0.8 }}
-            className="w-24 h-24 bg-[#fe6004] rounded-full flex items-center justify-center shadow-2xl mb-4"
-          >
-            <CheckCircle className="w-14 h-14 text-white" />
-          </motion.div>
-        </div>
-      </section>
+      {/* Racing stripes background */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 50px, #fe6004 50px, #fe6004 52px)`
+      }} />
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-lg mx-auto px-4 -mt-8 pb-12">
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-12 pb-12">
         {/* Success Header Card - ORANGE BACKGROUND */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-[#fe6004] rounded-3xl p-6 text-center mb-6 shadow-2xl border-4 border-[#fe6004]/30"
         >
+          {/* Success Icon */}
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', duration: 0.8 }}
+            className="w-20 h-20 bg-black rounded-full flex items-center justify-center shadow-xl mx-auto mb-4"
+          >
+            <CheckCircle className="w-12 h-12 text-[#fe6004]" />
+          </motion.div>
+          
           <h1 className="text-3xl font-black text-black uppercase tracking-tight mb-2">
             BOOKING CONFIRMED!
           </h1>
