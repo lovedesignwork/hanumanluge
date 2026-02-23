@@ -49,17 +49,19 @@ interface Booking {
 const getTicketCounts = (addons: Booking['booking_addons']) => {
   const counts = { ride1: 0, ride2: 0, ride3: 0, doubling: 0 };
   
-  addons?.forEach(addon => {
-    const name = addon.addon_name || addon.promo_addons?.name || '';
+  if (!addons || addons.length === 0) return counts;
+  
+  addons.forEach(addon => {
+    const name = (addon.addon_name || addon.promo_addons?.name || '').toLowerCase();
     const qty = addon.quantity || 0;
     
-    if (name.includes('1 Ride') || name === '1 Ride Ticket') {
+    if (name.includes('1 ride') || name.includes('1-ride')) {
       counts.ride1 += qty;
-    } else if (name.includes('2 Ride') || name === '2 Rides Ticket') {
+    } else if (name.includes('2 ride') || name.includes('2-ride')) {
       counts.ride2 += qty;
-    } else if (name.includes('3 Ride') || name === '3 Rides Ticket') {
+    } else if (name.includes('3 ride') || name.includes('3-ride')) {
       counts.ride3 += qty;
-    } else if (name.toLowerCase().includes('doubling')) {
+    } else if (name.includes('doubling')) {
       counts.doubling += qty;
     }
   });
