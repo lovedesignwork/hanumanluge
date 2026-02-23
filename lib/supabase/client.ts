@@ -85,7 +85,8 @@ export type Database = {
         Row: {
           id: string;
           booking_id: string;
-          addon_id: string;
+          addon_id: string | null;
+          addon_name: string | null;
           quantity: number;
           unit_price: number;
           created_at: string;
@@ -96,7 +97,7 @@ export type Database = {
         Row: {
           id: string;
           booking_id: string;
-          transport_type: 'hotel_pickup' | 'self_arrange' | 'private';
+          transport_type: 'hotel_pickup' | 'self_arrange' | 'private' | 'none';
           hotel_name: string | null;
           room_number: string | null;
           private_passengers: number;
@@ -105,6 +106,51 @@ export type Database = {
           created_at: string;
         };
         Insert: Omit<Database['public']['Tables']['booking_transport']['Row'], 'id' | 'created_at'>;
+      };
+      blog_categories: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['blog_categories']['Row'], 'id' | 'created_at'>;
+      };
+      blog_posts: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          excerpt: string | null;
+          content: string;
+          featured_image: string | null;
+          category_id: string | null;
+          author_id: string | null;
+          status: 'draft' | 'published' | 'archived';
+          meta_title: string | null;
+          meta_description: string | null;
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['blog_posts']['Row'], 'id' | 'created_at' | 'updated_at'>;
+      };
+      blog_tags: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['blog_tags']['Row'], 'id' | 'created_at'>;
+      };
+      blog_post_tags: {
+        Row: {
+          post_id: string;
+          tag_id: string;
+        };
+        Insert: Database['public']['Tables']['blog_post_tags']['Row'];
       };
       time_slots: {
         Row: {
