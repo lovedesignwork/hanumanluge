@@ -1,0 +1,35 @@
+{
+  "name": "Hanuman Luge",
+  "short_name": "Hanuman Luge",
+  "description": "Phuket's Premier Luge Adventure - Race down exciting tracks with stunning views!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#05126f",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "entertainment", "tourism"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/og-image.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "label": "Hanuman Luge Homepage"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
