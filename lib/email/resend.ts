@@ -1,7 +1,22 @@
 import { Resend } from 'resend';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+
+export function getResend(): Resend {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY || '');
+  }
+  return _resend;
+}
+
+export const resend = {
+  emails: {
+    send: async (options: Parameters<Resend['emails']['send']>[0]) => {
+      return getResend().emails.send(options);
+    }
+  }
+};
 
 export const EMAIL_FROM = 'Hanuman Luge <support@hanumanluge.com>';
 
