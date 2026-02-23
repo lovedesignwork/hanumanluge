@@ -15,7 +15,6 @@ import {
   Hotel,
   Car,
   MapPin,
-  Gift,
   Calendar,
   Tag,
   Cloud,
@@ -39,12 +38,34 @@ interface Booking {
   discount_amount?: number;
   status: string;
   created_at: string;
-  packages: { name: string };
+  packages: { name: string } | null;
   promo_codes?: { code: string; discount_type: string; discount_value: number } | null;
   booking_customers: { first_name: string; last_name: string; email: string; phone: string; special_requests?: string | null }[];
   booking_transport: { id?: string; transport_type: string; hotel_name: string | null; room_number: string | null; private_passengers: number | null; non_players: number | null }[];
-  booking_addons: { quantity: number; promo_addons: { name: string } }[];
+  booking_addons: { quantity: number; addon_name?: string | null; promo_addons?: { name: string } | null }[];
 }
+
+// Helper to extract ticket counts from booking addons
+const getTicketCounts = (addons: Booking['booking_addons']) => {
+  const counts = { ride1: 0, ride2: 0, ride3: 0, doubling: 0 };
+  
+  addons?.forEach(addon => {
+    const name = addon.addon_name || addon.promo_addons?.name || '';
+    const qty = addon.quantity || 0;
+    
+    if (name.includes('1 Ride') || name === '1 Ride Ticket') {
+      counts.ride1 += qty;
+    } else if (name.includes('2 Ride') || name === '2 Rides Ticket') {
+      counts.ride2 += qty;
+    } else if (name.includes('3 Ride') || name === '3 Rides Ticket') {
+      counts.ride3 += qty;
+    } else if (name.toLowerCase().includes('doubling')) {
+      counts.doubling += qty;
+    }
+  });
+  
+  return counts;
+};
 
 type SortField = 'booking_ref' | 'activity_date' | 'guest_count' | 'total_amount' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -474,26 +495,32 @@ export default function BookingsPage() {
                         <SortIcon field="activity_date" />
                       </div>
                     </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      1 Ride
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      2 Rides
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      3 Rides
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Doubling
+                    </th>
                     <th 
-                      className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                      className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
                       onClick={() => handleSort('guest_count')}
                     >
-                      <div className="flex items-center gap-1">
-                        Players
+                      <div className="flex items-center justify-center gap-1">
+                        Total
                         <SortIcon field="guest_count" />
                       </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Non-Players
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Transport
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                       Hotel / Room
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Add-ons
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
@@ -525,7 +552,7 @@ export default function BookingsPage() {
                   {filteredBookings.map((booking) => {
                     const customer = booking.booking_customers?.[0];
                     const transport = booking.booking_transport?.[0];
-                    const addons = booking.booking_addons || [];
+                    const ticketCounts = getTicketCounts(booking.booking_addons || []);
                     const transportInfo = transport ? getTransportLabel(transport.transport_type) : null;
                     const TransportIcon = transportInfo?.icon || MapPin;
 
@@ -562,45 +589,67 @@ export default function BookingsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <p className="text-sm text-slate-800">{booking.packages?.name}</p>
+                          <p className="text-sm text-slate-800">{booking.packages?.name || 'Luge Tickets'}</p>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <p className="text-sm text-slate-800">
                             {new Date(booking.activity_date).toLocaleDateString()}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {booking.time_slot === 'flexible' ? '8AM-6PM (Flex)' : booking.time_slot}
+                            {booking.time_slot === 'flexible' || booking.time_slot === 'Open' ? 'Open' : booking.time_slot}
                           </p>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center">
-                          <p className="text-sm text-slate-800">{booking.guest_count}</p>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-center">
-                          {transport?.non_players && transport.non_players > 0 ? (
-                            <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
-                              {transport.non_players}
+                          {ticketCounts.ride1 > 0 ? (
+                            <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-1 text-sm font-bold bg-blue-100 text-blue-700 rounded-lg">
+                              {ticketCounts.ride1}
                             </span>
                           ) : (
-                            <span className="text-xs text-slate-400">-</span>
+                            <span className="text-xs text-slate-300">-</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          {ticketCounts.ride2 > 0 ? (
+                            <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-1 text-sm font-bold bg-green-100 text-green-700 rounded-lg">
+                              {ticketCounts.ride2}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          {ticketCounts.ride3 > 0 ? (
+                            <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-1 text-sm font-bold bg-purple-100 text-purple-700 rounded-lg">
+                              {ticketCounts.ride3}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          {ticketCounts.doubling > 0 ? (
+                            <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-1 text-sm font-bold bg-orange-100 text-orange-700 rounded-lg">
+                              {ticketCounts.doubling}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <span className="inline-flex items-center justify-center min-w-[32px] px-2 py-1 text-sm font-bold bg-slate-800 text-white rounded-lg">
+                            {booking.guest_count}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          {transportInfo && (
+                          {transportInfo && transport?.transport_type !== 'self_arrange' && transport?.transport_type !== 'none' ? (
                             <div className="flex flex-col gap-1">
                               <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${transportInfo.color}`}>
                                 <TransportIcon className="w-3 h-3" />
                                 {transportInfo.label}
                               </span>
-                              {transport?.transport_type === 'private' && transport.private_passengers ? (
-                                <span className="text-xs text-purple-600 font-medium">
-                                  {transport.private_passengers} pax
-                                </span>
-                              ) : transport?.transport_type === 'hotel_pickup' && (
-                                <span className="text-xs text-slate-600">
-                                  Pickup: {booking.guest_count + (transport?.non_players || 0)} pax
-                                </span>
-                              )}
                             </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">-</span>
                           )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -610,25 +659,6 @@ export default function BookingsPage() {
                               {transport.room_number && (
                                 <p className="text-xs text-slate-500">Room {transport.room_number}</p>
                               )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {addons.length > 0 ? (
-                            <div className="flex flex-col gap-1">
-                              {addons.map((addon, idx) => (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-orange-50 text-orange-700 rounded-lg"
-                                >
-                                  <Gift className="w-3 h-3 flex-shrink-0" />
-                                  <span className="truncate max-w-[150px]">
-                                    {addon.quantity}x {addon.promo_addons?.name || 'Add-on'}
-                                  </span>
-                                </span>
-                              ))}
                             </div>
                           ) : (
                             <span className="text-xs text-slate-400">-</span>
