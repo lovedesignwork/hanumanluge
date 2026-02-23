@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, PRIVATE_TRANSFER_PRICE, NON_PLAYER_PRICE } from '@/lib/stripe/client';
+import { stripe, PRIVATE_TRANSFER_PRICE } from '@/lib/stripe/client';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+// Ticket types for Hanuman Luge (ticket-based activity)
+const TICKET_TYPES: Record<string, { name: string; price: number; rides: number }> = {
+  '1-ride': { name: '1 Ride Ticket', price: 790, rides: 1 },
+  '2-ride': { name: '2 Rides Ticket', price: 890, rides: 2 },
+  '3-ride': { name: '3 Rides Ticket', price: 990, rides: 3 },
+  'doubling': { name: 'Doubling Ride', price: 390, rides: 0 },
+};
+
 interface BookingData {
-  packageId: string;
+  tickets: Record<string, number>;
   date: string;
   time: string;
-  guests: number;
-  pickup: boolean;
-  hotel?: string;
-  room?: string;
   privateTransfer: boolean;
-  privatePassengers: number;
-  nonPlayers: number;
-  promoAddons: Record<string, number>;
+  hotelName?: string;
+  roomNumber?: string;
   promoCodeId?: string | null;
   discountAmount?: number;
   customer: {
@@ -31,17 +34,12 @@ export async function POST(request: NextRequest) {
     const body: BookingData = await request.json();
 
     const {
-      packageId,
+      tickets,
       date,
       time,
-      guests,
-      pickup,
-      hotel,
-      room,
       privateTransfer,
-      privatePassengers,
-      nonPlayers,
-      promoAddons,
+      hotelName,
+      roomNumber,
       promoCodeId,
       discountAmount = 0,
       customer,
@@ -53,60 +51,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error. Please contact support.' }, { status: 500 });
     }
 
-    // Get package details
-    const { data: packageData, error: packageError } = await supabaseAdmin
-      .from('packages')
-      .select('*')
-      .eq('id', packageId)
-      .single();
-
-    if (packageError) {
-      console.error('Package fetch error:', packageError);
-      return NextResponse.json({ error: `Failed to fetch package: ${packageError.message}` }, { status: 500 });
+    // Validate tickets
+    if (!tickets || Object.keys(tickets).length === 0) {
+      return NextResponse.json({ error: 'No tickets selected' }, { status: 400 });
     }
 
-    if (!packageData) {
-      return NextResponse.json({ error: 'Package not found' }, { status: 404 });
-    }
+    // Calculate ticket totals
+    let ticketSubtotal = 0;
+    let totalTicketCount = 0;
+    const ticketLineItems: { name: string; quantity: number; unitPrice: number }[] = [];
 
-    // Get addon details
-    const { data: addonsData } = await supabaseAdmin
-      .from('promo_addons')
-      .select('*')
-      .in('id', Object.keys(promoAddons));
-
-    // Calculate total
-    let totalAmount = packageData.price * guests;
-
-    // Add addons cost
-    if (addonsData) {
-      for (const addon of addonsData) {
-        const qty = promoAddons[addon.id] || 0;
-        if (qty > 0) {
-          totalAmount += addon.price * qty;
+    for (const [ticketId, quantity] of Object.entries(tickets)) {
+      if (quantity > 0) {
+        const ticketType = TICKET_TYPES[ticketId];
+        if (!ticketType) {
+          return NextResponse.json({ error: `Invalid ticket type: ${ticketId}` }, { status: 400 });
         }
+        ticketSubtotal += ticketType.price * quantity;
+        totalTicketCount += quantity;
+        ticketLineItems.push({
+          name: ticketType.name,
+          quantity,
+          unitPrice: ticketType.price,
+        });
       }
+    }
+
+    if (totalTicketCount === 0) {
+      return NextResponse.json({ error: 'No tickets selected' }, { status: 400 });
     }
 
     // Transport costs
     let transportCost = 0;
-    let transportType: 'hotel_pickup' | 'self_arrange' | 'private' = 'self_arrange';
+    const transportType = privateTransfer ? 'private' : 'none';
 
     if (privateTransfer) {
-      transportType = 'private';
       transportCost = PRIVATE_TRANSFER_PRICE;
-      totalAmount += PRIVATE_TRANSFER_PRICE;
-    } else if (pickup) {
-      transportType = 'hotel_pickup';
     }
 
-    if (nonPlayers > 0) {
-      const nonPlayerCost = NON_PLAYER_PRICE * nonPlayers;
-      transportCost += nonPlayerCost;
-      totalAmount += nonPlayerCost;
-    }
-
-    // Apply discount
+    // Calculate total
+    const totalAmount = ticketSubtotal + transportCost;
     const finalAmount = Math.max(0, totalAmount - discountAmount);
 
     // If promo code used, increment usage
@@ -115,18 +99,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create booking in pending state
+    // For Luge, we use a generic package approach - guest_count = total tickets
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
       .insert({
-        package_id: packageId,
+        package_id: null,
         activity_date: date,
-        time_slot: time,
-        guest_count: guests,
+        time_slot: time || 'Open',
+        guest_count: totalTicketCount,
         status: 'pending',
         total_amount: finalAmount,
         discount_amount: discountAmount,
         promo_code_id: promoCodeId || null,
         currency: 'THB',
+        special_requests: customer.specialRequests || null,
       })
       .select()
       .single();
@@ -147,53 +133,69 @@ export async function POST(request: NextRequest) {
       special_requests: customer.specialRequests || null,
     });
 
-    // Insert transport details
-    await supabaseAdmin.from('booking_transport').insert({
+    // Insert transport details (only if private transfer)
+    if (privateTransfer) {
+      await supabaseAdmin.from('booking_transport').insert({
+        booking_id: booking.id,
+        transport_type: transportType,
+        hotel_name: hotelName || null,
+        room_number: roomNumber || null,
+        private_passengers: 0,
+        non_players: 0,
+        transport_cost: transportCost,
+      });
+    }
+
+    // Insert ticket items as booking_addons (for OneBooking sync)
+    // Note: addon_name column stores ticket type names for Luge bookings
+    const addonInserts = ticketLineItems.map(item => ({
       booking_id: booking.id,
-      transport_type: transportType,
-      hotel_name: hotel || null,
-      room_number: room || null,
-      private_passengers: privatePassengers,
-      non_players: nonPlayers,
-      transport_cost: transportCost,
-    });
+      addon_id: null,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      addon_name: item.name,
+    }));
 
-    // Insert addons
-    if (addonsData) {
-      const addonInserts = addonsData
-        .filter((addon) => promoAddons[addon.id] > 0)
-        .map((addon) => ({
-          booking_id: booking.id,
-          addon_id: addon.id,
-          quantity: promoAddons[addon.id],
-          unit_price: addon.price,
-        }));
-
-      if (addonInserts.length > 0) {
-        await supabaseAdmin.from('booking_addons').insert(addonInserts);
+    if (addonInserts.length > 0) {
+      const { error: addonError } = await supabaseAdmin.from('booking_addons').insert(addonInserts);
+      if (addonError) {
+        console.warn('Failed to insert booking addons:', addonError.message);
+        // If addon_name column doesn't exist, try without it
+        if (addonError.message.includes('addon_name')) {
+          const fallbackInserts = ticketLineItems.map(item => ({
+            booking_id: booking.id,
+            addon_id: null,
+            quantity: item.quantity,
+            unit_price: item.unitPrice,
+          }));
+          await supabaseAdmin.from('booking_addons').insert(fallbackInserts);
+        }
       }
     }
 
     // Build description for Stripe
-    const timeDisplay = time === 'flexible' ? '8AM-6PM (Flexible)' : time;
-    const description = `${packageData.name} - ${guests} guest(s) on ${date} at ${timeDisplay}`;
+    const ticketSummary = ticketLineItems
+      .map(item => `${item.quantity}x ${item.name}`)
+      .join(', ');
+    const description = `Luge Tickets: ${ticketSummary} on ${date}`;
 
     // Create Payment Intent - card only
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: finalAmount * 100, // Convert to satang (THB cents)
+      amount: finalAmount * 100,
       currency: 'thb',
-      payment_method_types: ['card'], // Card payments only
+      payment_method_types: ['card'],
       description,
       metadata: {
         booking_id: booking.id,
         booking_ref: booking.booking_ref,
-        package_name: packageData.name,
+        package_name: 'Luge Tickets',
         customer_email: customer.email,
         discount_amount: discountAmount.toString(),
         promo_code_id: promoCodeId || '',
+        ticket_summary: ticketSummary,
       },
       receipt_email: customer.email,
-      statement_descriptor_suffix: 'ONEBOOKING',
+      statement_descriptor_suffix: 'HANUMANLUGE',
     });
 
     // Update booking with payment intent ID

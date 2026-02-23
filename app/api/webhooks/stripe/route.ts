@@ -174,11 +174,12 @@ export async function POST(request: NextRequest) {
 
             try {
               // Sync booking to OneBooking Central Dashboard
+              // Hanuman Luge is ticket-based, so we use a different sync approach
               const syncResult = await pushBookingToOneBooking('booking.created', {
                 id: booking.id,
                 booking_ref: booking.booking_ref,
                 activity_date: booking.activity_date,
-                time_slot: booking.time_slot,
+                time_slot: booking.time_slot || 'Open',
                 guest_count: Number(booking.guest_count) || 0,
                 total_amount: Number(booking.total_amount) || 0,
                 discount_amount: Number(booking.discount_amount) || 0,
@@ -187,22 +188,25 @@ export async function POST(request: NextRequest) {
                 special_requests: booking.special_requests || null,
                 stripe_payment_intent_id: paymentIntent.id,
                 created_at: booking.created_at,
-                packages: booking.packages ? {
-                  name: booking.packages.name,
-                  price: Number(booking.packages.price) || 0,
-                } : null,
+                // For Luge, use generic "Luge Tickets" package
+                packages: {
+                  name: 'Luge Tickets',
+                  price: 0,
+                },
                 customers: customer ? {
                   name: `${customer.first_name} ${customer.last_name}`,
                   email: customer.email,
                   phone: customer.phone || null,
                   country_code: customer.country_code || null,
                 } : null,
-                transport_type: transport?.transport_type || null,
+                // For Luge, transport defaults to "none" unless private transfer
+                transport_type: transport?.transport_type === 'private' ? 'private' : 'none',
                 hotel_name: transport?.hotel_name || null,
                 room_number: transport?.room_number || null,
-                non_players: Number(transport?.non_players) || 0,
-                private_passengers: Number(transport?.private_passengers) || 0,
+                non_players: 0,
+                private_passengers: 0,
                 transport_cost: Number(transport?.transport_cost) || 0,
+                // Ticket types are stored in booking_addons
                 booking_addons: booking.booking_addons || [],
               });
               if (syncResult.success) {

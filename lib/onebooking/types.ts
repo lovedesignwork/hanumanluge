@@ -19,7 +19,7 @@ export interface CustomerData {
 }
 
 export interface TransportData {
-  type: 'hotel_pickup' | 'self_arrange' | 'private' | null;
+  type: 'hotel_pickup' | 'self_arrange' | 'private' | 'none' | null;
   hotel_name: string | null;
   room_number: string | null;
   non_players: number;

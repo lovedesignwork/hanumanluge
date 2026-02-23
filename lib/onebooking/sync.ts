@@ -219,6 +219,7 @@ export async function pushBookingToOneBooking(
     booking_addons?: Array<{
       quantity: number;
       unit_price: number;
+      addon_name?: string | null;
       promo_addons?: { name: string } | null;
     }>;
   }
@@ -241,8 +242,11 @@ export async function pushBookingToOneBooking(
     special_requests: bookingData.special_requests || null,
   };
 
+  // For Luge, transport defaults to "none" unless private transfer is selected
+  const transportType = bookingData.transport_type === 'private' ? 'private' : 'none';
+  
   const transport: TransportData = {
-    type: (bookingData.transport_type as TransportData['type']) || null,
+    type: transportType as TransportData['type'],
     hotel_name: bookingData.hotel_name || null,
     room_number: bookingData.room_number || null,
     non_players: bookingData.non_players || 0,
@@ -250,8 +254,9 @@ export async function pushBookingToOneBooking(
     cost: bookingData.transport_cost || 0,
   };
 
+  // For Luge, addons contain ticket types (addon_name) instead of promo_addons
   const addons: AddonData[] = (bookingData.booking_addons || []).map(addon => ({
-    name: addon.promo_addons?.name || 'Unknown Addon',
+    name: addon.addon_name || addon.promo_addons?.name || 'Unknown Addon',
     quantity: addon.quantity,
     unit_price: addon.unit_price,
   }));
