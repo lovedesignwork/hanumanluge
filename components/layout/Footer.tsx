@@ -25,7 +25,13 @@ const socialLinks = [
   { name: 'YouTube', icon: Youtube, href: 'https://youtube.com/hanumanluge' },
 ];
 
-const marqueeText = '"WE ARE CREATORS, INNOVATORS, AND STORYTELLERS"';
+const marqueeTexts = [
+  "PHUKET'S FIRST AND ONLY LUGE PARK",
+  "RIDE TOGETHER",
+  "2 AWESOME TRACKS",
+  "THRILL EXPERIENCES",
+  "FUN & JOY ACTIVITY",
+];
 
 export function Footer() {
   return (
@@ -33,9 +39,14 @@ export function Footer() {
       {/* Marquee Banner */}
       <div className="bg-lime py-4 overflow-hidden">
         <div className="marquee-content whitespace-nowrap">
-          {[...Array(4)].map((_, i) => (
-            <span key={i} className="inline-block mx-12 text-navy font-black text-xl lg:text-2xl uppercase tracking-wider">
-              {marqueeText}
+          {[...Array(3)].map((_, i) => (
+            <span key={i} className="inline-flex items-center">
+              {marqueeTexts.map((text, j) => (
+                <span key={j} className="inline-flex items-center mx-6 text-navy font-black text-xl lg:text-2xl uppercase tracking-wider">
+                  {text}
+                  <span className="mx-6 text-navy/40">★</span>
+                </span>
+              ))}
             </span>
           ))}
         </div>
