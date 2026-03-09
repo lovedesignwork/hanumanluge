@@ -165,14 +165,14 @@ export function Footer() {
                 <li className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-lime flex-shrink-0 mt-0.5" />
                   <span className="text-white/50 text-sm">
-                    [ADDRESS LINE 1]<br />
-                    [ADDRESS LINE 2]
+                    105 Moo 4, Chaofa Road<br />
+                    T.Wichit, Muang, Phuket 83000
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-lime flex-shrink-0" />
-                  <a href="tel:+66XXXXXXXX" className="text-white/50 hover:text-lime transition-colors text-sm">
-                    [PHONE NUMBER]
+                  <a href="tel:+66935628585" className="text-white/50 hover:text-lime transition-colors text-sm">
+                    +66 (0) 93 562 8585
                   </a>
                 </li>
                 <li className="flex items-center gap-3">

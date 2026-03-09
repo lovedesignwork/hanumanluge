@@ -113,9 +113,9 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium text-white">Location</p>
                       <p className="text-white/60 text-sm">
-                        [ADDRESS LINE 1]<br />
-                        [ADDRESS LINE 2]<br />
-                        Thailand
+                        105 Moo 4, Chaofa Road<br />
+                        T.Wichit, Muang<br />
+                        Phuket, Thailand 83000
                       </p>
                     </div>
                   </div>
@@ -126,8 +126,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="font-medium text-white">Phone</p>
-                      <a href="tel:+66XXXXXXXX" className="text-primary hover:underline">
-                        [PHONE NUMBER]
+                      <a href="tel:+66935628585" className="text-primary hover:underline">
+                        +66 (0) 93 562 8585
                       </a>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export default function ContactPage() {
                       <Instagram className="w-5 h-5 text-white" />
                     </a>
                     <a
-                      href="https://wa.me/66XXXXXXXX"
+                      href="https://wa.me/66935628585"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-surface border border-white/10 hover:bg-primary hover:border-primary rounded-lg flex items-center justify-center transition-all group"

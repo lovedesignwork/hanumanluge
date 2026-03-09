@@ -46,14 +46,14 @@ const contactInfo = [
   {
     icon: MapPin,
     label: 'Address',
-    value: '[ADDRESS LINE 1]',
-    subValue: '[ADDRESS LINE 2]',
+    value: '105 Moo 4, Chaofa Road',
+    subValue: 'T.Wichit, Muang, Phuket 83000',
   },
   {
     icon: Phone,
     label: 'Phone',
-    value: '[PHONE NUMBER]',
-    href: 'tel:+66XXXXXXXX',
+    value: '+66 (0) 93 562 8585',
+    href: 'tel:+66935628585',
   },
   {
     icon: Mail,

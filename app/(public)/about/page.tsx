@@ -449,9 +449,9 @@ export default function AboutPage() {
               
               <div className="space-y-4">
                 {[
-                  { icon: MapPin, label: 'Location', value: 'Kathu, Phuket, Thailand' },
+                  { icon: MapPin, label: 'Location', value: '105 Moo 4, Chaofa Road, T.Wichit, Muang, Phuket 83000' },
                   { icon: Clock, label: 'Hours', value: 'Daily: 10:00 AM - 8:00 PM' },
-                  { icon: Phone, label: 'Phone', value: '+66 XX XXX XXXX' },
+                  { icon: Phone, label: 'Phone', value: '+66 (0) 93 562 8585' },
                   { icon: Mail, label: 'Email', value: 'support@hanumanluge.com' },
                 ].map((item, index) => (
                   <motion.div
